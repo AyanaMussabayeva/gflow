@@ -76,7 +76,7 @@ def load_v2_artifact(spec_name: str, benchmark_name: str, artifact_dir: str | No
 
 
 def load_legacy_benchmark_results(benchmark_name: str) -> dict:
-    path = Path("results") / "compute_tradeoff" / f"{benchmark_name}_full" / "raw_results.json"
+    path = Path("legacy") / "results" / "compute_tradeoff" / f"{benchmark_name}_full" / "raw_results.json"
     data = _load_json(path)
     return data[benchmark_name]
 
