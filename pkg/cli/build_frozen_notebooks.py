@@ -3,7 +3,7 @@ from __future__ import annotations
 import json
 from textwrap import dedent
 
-from pkg.config import FROZEN_NOTEBOOKS_ROOT
+from pkg.config import FROZEN_NOTEBOOKS_ROOT, REPO_ROOT
 
 
 def markdown_cell(text: str) -> dict:
@@ -24,28 +24,28 @@ def code_cell(code: str) -> dict:
     }
 
 
-COMMON_SETUP = """
+COMMON_SETUP = f"""
 from pathlib import Path
 import json
 from IPython.display import Image, Markdown, display
 
-ROOT = Path.cwd()
+ROOT = Path(r"{REPO_ROOT}")
 
 def latest_dir(path_str: str) -> Path:
     path = ROOT / path_str
     candidates = sorted([p for p in path.iterdir() if p.is_dir()]) if path.exists() else []
     if not candidates:
-        raise FileNotFoundError(f"No directories found under {path}")
+        raise FileNotFoundError(f"No directories found under {{path}}")
     return candidates[-1]
 
 def show_text(path: Path, max_chars: int | None = None) -> None:
     text = path.read_text(encoding="utf-8")
     if max_chars is not None:
         text = text[:max_chars]
-    display(Markdown(f"```\\n{text}\\n```"))
+    display(Markdown(f"```\\n{{text}}\\n```"))
 
 def show_image(path: Path) -> None:
-    display(Markdown(f"### {path.name}"))
+    display(Markdown(f"### {{path.name}}"))
     display(Image(filename=str(path)))
 """
 

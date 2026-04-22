@@ -20,12 +20,33 @@ pip install -r requirements.txt
 Quick sanity check:
 
 ```bash
-python -m compileall pkg tests scripts
+python -m compileall pkg tests scripts legacy
 ```
 
-## Main Scripts
+## Main Entry Points
 
-### 1. Main suite
+### 1. Top-level runner
+
+Recommended entry point:
+
+```bash
+bash scripts/run.sh
+bash scripts/run.sh smoke all
+bash scripts/run.sh full main-only
+bash scripts/run.sh full ablations-only
+```
+
+Behavior:
+
+- `main-only` runs `main_v2` and exports `main_v2` report assets
+- `ablations-only` runs `reward_protocol_ablation_v2`, exports its assets, then runs `pool_ablation_v2` and `finetune_ablation_v2`
+- `all` runs both groups in sequence
+
+`run.sh` does not rebuild frozen notebooks automatically.
+
+### 2. Direct suite runners
+
+#### Main suite
 
 Smoke-run:
 
@@ -44,10 +65,11 @@ Outputs:
 - one artifact run per benchmark in `artifacts_v2/main_v2/<benchmark>/<timestamp>/`
 - a suite manifest in `artifacts_v2/_suites/main_v2/<timestamp>/manifest.json`
 
-### 2. Reward protocol ablation
+#### Reward protocol ablation
 
 ```bash
 python scripts/run_reward_protocol_ablation_v2.py --profile smoke
+python scripts/run_reward_protocol_ablation_v2.py --profile full
 ```
 
 This suite runs:
@@ -56,10 +78,11 @@ This suite runs:
 - `reward_protocol_zscore_v2`
 - `reward_protocol_rank_v2`
 
-### 3. Pool ablation
+#### Pool ablation
 
 ```bash
 python scripts/run_v2_suite.py --suite pool_ablation_v2 --profile smoke
+python scripts/run_v2_suite.py --suite pool_ablation_v2 --profile full
 ```
 
 This suite runs:
@@ -67,10 +90,11 @@ This suite runs:
 - `pool_shared_v2`
 - `pool_fresh_v2`
 
-### 4. Finetune ablation
+#### Finetune ablation
 
 ```bash
 python scripts/run_v2_suite.py --suite finetune_ablation_v2 --profile smoke
+python scripts/run_v2_suite.py --suite finetune_ablation_v2 --profile full
 ```
 
 This suite runs:
@@ -82,8 +106,19 @@ This suite runs:
 
 ### Main v2
 
+Default behavior: the exporter now resolves artifacts from the latest suite manifest for `main_v2`.
+
 ```bash
 python scripts/export_report_assets_v2.py --spec main_v2 --suite-name main_v2
+```
+
+Pin a specific finished suite run:
+
+```bash
+python scripts/export_report_assets_v2.py \
+  --spec main_v2 \
+  --suite-name main_v2 \
+  --suite-manifest artifacts_v2/_suites/main_v2/<timestamp>/manifest.json
 ```
 
 Output:
@@ -95,8 +130,12 @@ Output:
 
 ### Reward protocol ablation
 
+Default behavior: the exporter resolves artifacts from the latest suite manifest for `reward_protocol_ablation_v2`.
+
 ```bash
 python scripts/export_reward_protocol_ablation_v2.py
+python scripts/export_reward_protocol_ablation_v2.py \
+  --suite-manifest artifacts_v2/_suites/reward_protocol_ablation_v2/<timestamp>/manifest.json
 ```
 
 Output:
@@ -110,6 +149,25 @@ Each reward protocol gets its own bundle:
 - `tables/summary_metrics.csv`
 - `tables/summary_metrics.md`
 - `snippets/report_snippet.md`
+
+## Frozen Notebooks
+
+`frozen_notebooks/` are read-only viewers over saved artifacts. They do not rerun experiments.
+
+Rebuild them after running experiments or exporting report assets:
+
+```bash
+bash scripts/build_frozen_notebooks.sh
+```
+
+This regenerates notebooks in `frozen_notebooks/` so they point to the latest saved artifacts and report bundles.
+
+Typical workflow:
+
+1. Run experiments with `bash scripts/run.sh ...`
+2. Export report assets if needed
+3. Rebuild frozen notebooks with `bash scripts/build_frozen_notebooks.sh`
+4. Open notebooks from `frozen_notebooks/`
 
 ## What To Inspect After A Run
 
@@ -177,19 +235,22 @@ whether `v2` is actually more stable than the legacy pipeline.
 
 For a quick research loop:
 
-1. Run `main_v2` in `smoke`
+1. Run `bash scripts/run.sh smoke main-only`
 2. Check `summary.json` and `trial_metrics.csv`
-3. Export report assets
-4. Inspect `regret_comparison`, `reward_hist`, and `legacy_vs_v2`
-5. If the signal looks reasonable, run the needed suite in `full`
+3. Export report assets if you need a pinned bundle
+4. Rebuild frozen notebooks
+5. Inspect `regret_comparison`, `reward_hist`, and `legacy_vs_v2`
+6. If the signal looks reasonable, run `bash scripts/run.sh full main-only`
 
 For a post-mortem workflow:
 
-1. `main_v2`
-2. `pool_ablation_v2`
-3. `reward_protocol_ablation_v2`
-4. `finetune_ablation_v2`
-5. Compare markdown tables and comparison figures
+1. `bash scripts/run.sh full main-only`
+2. `python scripts/run_reward_protocol_ablation_v2.py --profile full`
+3. `python scripts/run_v2_suite.py --suite pool_ablation_v2 --profile full`
+4. `python scripts/run_v2_suite.py --suite finetune_ablation_v2 --profile full`
+5. export report assets
+6. rebuild frozen notebooks
+7. compare markdown tables and comparison figures
 
 ## Current v2 Limitations
 
@@ -213,6 +274,7 @@ Not implemented yet:
 
 - [pkg](/Users/ayana.mussabayeva/projects/domaha/sequential_desicion_project/pkg)
 - [scripts](/Users/ayana.mussabayeva/projects/domaha/sequential_desicion_project/scripts)
+- [frozen_notebooks](/Users/ayana.mussabayeva/projects/domaha/sequential_desicion_project/frozen_notebooks)
 - [legacy](/Users/ayana.mussabayeva/projects/domaha/sequential_desicion_project/legacy)
 - [artifacts_v2](/Users/ayana.mussabayeva/projects/domaha/sequential_desicion_project/artifacts_v2)
 - [report_assets_v2](/Users/ayana.mussabayeva/projects/domaha/sequential_desicion_project/report_assets_v2)

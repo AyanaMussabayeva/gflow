@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import argparse
 import json
 import sys
 from pathlib import Path
@@ -18,30 +19,41 @@ from pkg.reporting import (
     write_summary_markdown,
 )
 from pkg.reporting.artifacts import _json_default
-from pkg.reporting.exports import load_v2_artifact
+from pkg.reporting.exports import load_suite_manifest, load_v2_artifact
 
 
 def main() -> None:
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--suite-manifest", default=None)
+    args = parser.parse_args()
+
     suite_name = "reward_protocol_ablation_v2"
+    resolved_suite_manifest, _ = load_suite_manifest(suite_name, suite_manifest_path=args.suite_manifest)
     spec_names = [
         "reward_protocol_softplus_scaled_v2",
         "reward_protocol_zscore_v2",
         "reward_protocol_rank_v2",
     ]
     suite_bundle = ReportAssetBundle.create(suite_name)
-    manifest = {"suite_name": suite_name, "specs": {}}
+    manifest = {"suite_name": suite_name, "suite_manifest": str(resolved_suite_manifest), "specs": {}}
 
     for spec_name in spec_names:
         spec_bundle = suite_bundle.for_spec(spec_name)
         rows = []
         spec_exports = {}
         for benchmark in BENCHMARKS:
-            _, payload = load_v2_artifact(spec_name, benchmark)
+            _, payload = load_v2_artifact(
+                spec_name,
+                benchmark,
+                suite_name=suite_name,
+                suite_manifest_path=str(resolved_suite_manifest),
+            )
             rows.append(benchmark_summary_row(benchmark, payload["summary"]))
             spec_exports[benchmark] = export_report_like_figures(
                 spec_name=spec_name,
                 benchmark_name=benchmark,
                 suite_name=suite_name,
+                suite_manifest_path=str(resolved_suite_manifest),
                 bundle=spec_bundle,
             )
 

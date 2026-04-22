@@ -13,6 +13,7 @@ def main() -> None:
     parser.add_argument("--name", required=True)
     parser.add_argument("--profile", default="smoke", choices=["smoke", "full"])
     parser.add_argument("--reward-protocol", default="rank", choices=["raw", "softplus_scaled", "zscore", "rank"])
+    parser.add_argument("--verbose", action="store_true")
     args = parser.parse_args()
 
     spec = make_experiment_spec(
@@ -21,7 +22,7 @@ def main() -> None:
         profile=args.profile,
         reward_protocol=args.reward_protocol,
     )
-    result = run_experiment(spec)
+    result = run_experiment(spec, verbose=args.verbose)
     print(json.dumps(result, indent=2, default=_json_default))
 
 

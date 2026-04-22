@@ -23,14 +23,18 @@
 \maketitle
 
 \begin{abstract}
-This project studies whether learned dropout-mask generation improves neural Bayesian optimization over random mask sampling. The surrogate is a two-hidden-layer MLP trained with dropout, and the decision variable is a block-wise binary mask applied at inference time. The baseline samples masks uniformly at random, while the proposed method trains a contextual sequential GFlowNet to sample masks with probability proportional to a proxy improvement reward. To reduce implementation confounds, the refactored package pipeline uses shared per-step evaluation contexts, aligned training and inference mask semantics, and explicit diagnostics for reward reliability. I evaluate both methods on Branin (2D), Hartmann-6 (6D), and Ackley (10D). The main empirical result is mixed: random masks perform better on Branin and Hartmann-6, but the GFlowNet policy achieves lower final regret on Ackley-10. This suggests that learned mask generation is more promising in higher-dimensional settings, but reward quality and computational overhead remain central bottlenecks.
+This project studies whether learned dropout-mask generation improves neural Bayesian optimization over random mask sampling. The proposed method trains a contextual sequential GFlowNet to sample block-wise dropout masks using a proxy improvement reward, while the baseline samples masks uniformly at random. To improve internal validity, all final experiments use a controlled evaluation protocol with matched per-step candidate pools, aligned training and inference mask semantics, and explicit reward-reliability diagnostics. Across Branin (2D), Hartmann-6 (6D), and Ackley-10 (10D), the empirical result is mixed: random masks perform better on Branin and Hartmann-6, while the GFlowNet policy achieves lower final regret on Ackley-10. Within this benchmark configuration, the evidence suggests a conditional, benchmark-dependent benefit rather than universal improvement.
 \end{abstract}
 
 \section{Introduction}
 
 Bayesian optimization (BO) is a standard framework for optimizing expensive black-box objectives under a limited evaluation budget \cite{snoek2012practical}. Classical BO uses a probabilistic surrogate, often a Gaussian process, together with an acquisition function that balances exploration and exploitation. In this project, I study a neural alternative in which the surrogate is a dropout MLP and uncertainty is represented through stochastic masked forward passes, following the Bayesian interpretation of dropout from \citet{gal2016dropout}.
 
-The main question is whether mask sampling itself can be made more informative. Instead of treating dropout masks as undirected random perturbations, I model mask generation as a structured sampling problem and learn a distribution over masks with a GFlowNet \cite{bengio2023gflownet}. The hypothesis is that a learned mask policy should help more as the search space becomes larger and more multimodal. Recent work on GFlowOut shows that GFlowNets can represent useful distributions over dropout masks in supervised learning \cite{liu2023gflowout}; here I test the same idea inside a BO loop.
+The main question is whether mask sampling itself can be made more informative. Instead of treating dropout masks as undirected random perturbations, I model mask generation as a structured sampling problem and learn a distribution over masks with a GFlowNet \cite{bengio2023gflownet}. Recent work on GFlowOut shows that GFlowNets can represent useful distributions over dropout masks in supervised learning \cite{liu2023gflowout}; here I test the same idea inside a BO loop. This study compares learned mask generation against a matched random MC-Dropout baseline on standard BO benchmarks, uses contextual conditioning to study non-stationarity as the surrogate evolves, and reports the regret-versus-compute trade-off rather than regret alone.
+
+This study is a controlled proof-of-concept. Its goal is to test whether learned dropout-mask generation yields a reproducible advantage over random MC-Dropout under a standardized evaluation protocol.
+
+The contributions of this report are threefold: (1) a contextual GFlowNet formulation for sequential dropout-mask generation inside a neural BO loop; (2) a controlled and reproducible benchmark protocol with matched within-step evaluation contexts and explicit reward diagnostics; and (3) an empirical study showing that the resulting benefit is benchmark-dependent and currently comes with substantial computational overhead.
 
 \section{Research Questions}
 
@@ -38,7 +42,7 @@ This study focuses on four questions:
 
 \begin{enumerate}
     \item Can learned mask generation outperform random mask sampling for BO exploration?
-    \item Are gains more visible on harder benchmarks, especially at higher dimensionality?
+    \item Are gains more visible on Ackley-10 within the current benchmark suite, and to what extent can that be separated from dimensionality?
     \item How should the mask policy adapt as the dataset and surrogate change over BO iterations?
     \item Is the extra compute required for GFlowNet training justified by lower regret?
 \end{enumerate}
@@ -72,7 +76,7 @@ Let $y_t^{\mathrm{best}}$ be the best observed oracle value so far. The proxy im
 \[
 \Delta(m) = \tilde\mu(x_m) + \beta \tilde\sigma(x_m) - y_t^{\mathrm{best}},
 \]
-which is then converted into a positive reward $R(m)$ used for mask sampling. In the original implementation this conversion used a fixed softplus transform. In the refactored package pipeline, reward scaling is treated as an explicit protocol choice, with raw, normalized, and rank-based variants available as controlled alternatives. This change is important because it turns reward construction from a hidden implementation detail into an experimental axis that can be stress-tested directly. Across all variants, the underlying objective is the same: reward masks that both predict high value and preserve some uncertainty through the held-out ensemble.
+which is then converted into a positive reward $R(m)$ used for mask sampling. The ideal reward in the project formulation depends on realized oracle improvement, but using that quantity online would require additional expensive objective evaluations. I therefore optimize a surrogate-based proxy reward computed from held-out masked evaluations. This is not merely a practical shortcut; it is one of the central approximations of the method. For that reason, reward reliability is treated as a first-class diagnostic target alongside regret. In the original implementation this conversion used a fixed softplus transform. In the final controlled pipeline, reward scaling is treated as an explicit protocol choice, with raw, normalized, and rank-based variants available as controlled alternatives. Across all variants, the underlying objective is the same: reward masks that both predict high value and preserve some uncertainty through the held-out ensemble.
 
 \subsection{Random Baseline vs. GFlowNet Policy}
 
@@ -117,13 +121,15 @@ Ackley & 10 & 20 & 24 & 128 & 4096 & 200 \\
 \end{tabular}
 \end{table}
 
-Across all benchmarks, each BO step compares 96 sampled masks for the random policy and 96 sampled masks for the GFlowNet policy. The proxy reward uses 24 held-out random masks. All experiments were executed in the \texttt{general\_env} conda environment.
+Across all benchmarks, each BO step compares 96 sampled masks for the random policy and 96 sampled masks for the GFlowNet policy. The proxy reward uses 24 held-out random masks. All experiments were executed in the \texttt{general\_env} conda environment. The final package is reproducibility-oriented: runs are config-driven, benchmark settings are fixed per task, candidate pools and held-out ensembles are shared within each BO step, and diagnostics are logged together with regret and runtime.
 
-\subsection{Implementation Controls in the Refactored Pipeline}
+All main comparisons are budget-matched: both methods use the same surrogate architecture, BO horizon, number of sampled masks per step, and candidate-pool size. In addition, all mask evaluations within a BO step are performed under the same candidate pool and the same held-out mask ensemble, so the comparison isolates the mask-sampling policy rather than random variation in the evaluation context.
 
-A substantial part of the project effort went into reducing ambiguity about whether the observed performance differences came from the method itself or from the surrounding implementation. The refactored \texttt{pkg} pipeline therefore introduces three controls that are important for interpreting the final results.
+\subsection{Controlled Evaluation Protocol}
 
-First, all mask evaluations within a BO step now share the same candidate pool and the same held-out mask ensemble. This removes a major source of evaluation noise present in a naive implementation, where each mask could otherwise be scored against a different randomly drawn context. Second, the mask semantics used during surrogate training and during inference-time mask search are aligned, so that the policy is no longer optimized over a mask space that differs substantially from the one seen by the surrogate during learning. Third, the pipeline logs reward reliability diagnostics in addition to regret: step-wise reward variance, improvement variance, floor-reward frequency, same-mask repeat-evaluation variance, and the correlation between proxy improvement and realized oracle gain.
+A substantial part of the project effort went into reducing ambiguity about whether the observed performance differences came from the method itself or from the surrounding evaluation protocol. The final \texttt{pkg} pipeline therefore introduces three controls that are important for interpreting the results.
+
+First, all mask evaluations within a BO step now share the same candidate pool and the same held-out mask ensemble. This removes a major source of evaluation noise present in a naive implementation, where each mask could otherwise be scored against a different randomly drawn context. Second, the final pipeline aligns surrogate-side masking and policy-side search, removing a train/inference mismatch present in earlier prototypes. Third, the pipeline logs reward reliability diagnostics in addition to regret: step-wise reward variance, improvement variance, floor-reward frequency, same-mask repeat-evaluation variance, and the correlation between proxy improvement and realized oracle gain.
 
 These controls do not guarantee that the proxy reward is perfectly calibrated, but they make the resulting conclusions more defensible. In particular, if a mixed or negative result persists after these implementation changes, it is less plausible to dismiss it as a simple artifact of noisy reward evaluation or an avoidable mismatch between training and inference.
 
@@ -145,7 +151,9 @@ Ackley (10D) & $18.1526 \pm 1.1661$ & $16.7447 \pm 1.5421$ & GFlowNet \\
 \end{tabular}
 \end{table}
 
-Table~\ref{tab:final_results} shows a clear mixed pattern. On the lower-dimensional benchmarks, learned mask generation did not outperform the random baseline. On Branin, the random policy finished with a lower mean regret by $0.3646$. On Hartmann-6, the gap in favor of random masks was smaller, $0.1456$, but the same qualitative conclusion held. Ackley-10 was different: here the GFlowNet policy improved final regret by $1.4079$, providing the strongest positive evidence for the method.
+Table~\ref{tab:final_results} shows a clear mixed pattern. On the lower-dimensional benchmarks, learned mask generation did not outperform the random baseline. On Branin, the random policy finished with a lower mean regret by $0.3646$, which corresponds to the GFlowNet method performing about $20.5\%$ worse relative to the random baseline. On Hartmann-6, the gap in favor of random masks was smaller, $0.1456$, but it still corresponds to the GFlowNet method performing about $26.1\%$ worse. Ackley-10 was different: here the GFlowNet policy improved final regret by $1.4079$, or about $7.8\%$ relative to the random baseline, providing the strongest positive evidence for the method.
+
+The controlled protocol did not change the benchmark-level conclusion.
 
 \begin{figure*}[t]
     \centering
@@ -170,7 +178,7 @@ Table~\ref{tab:final_results} shows a clear mixed pattern. On the lower-dimensio
     \label{fig:regret_comparisons}
 \end{figure*}
 
-Figure~\ref{fig:regret_comparisons} makes the trend visible over the full optimization horizon. On Branin and Hartmann-6, the random baseline remains competitive throughout the run. On Ackley-10, the GFlowNet curve overtakes the random baseline and ends at a lower regret, suggesting that the learned policy becomes more useful as the search problem becomes harder.
+Figure~\ref{fig:regret_comparisons} makes the trend visible over the full optimization horizon. On Branin and Hartmann-6, the random baseline remains competitive throughout the run. On Ackley-10, the GFlowNet curve overtakes the random baseline and ends at a lower regret, suggesting that learned mask generation may be more useful in this benchmark configuration. Because the study uses only five seeds per benchmark, these quantities should be interpreted primarily as effect-size estimates rather than as definitive significance claims. Under that lens, the results indicate that the method is beneficial in some settings but not uniformly across benchmarks.
 
 \begin{figure*}[t]
     \centering
@@ -189,7 +197,7 @@ Figure~\ref{fig:regret_comparisons} makes the trend visible over the full optimi
     \label{fig:ackley_diagnostics}
 \end{figure*}
 
-The Ackley diagnostics in Figure~\ref{fig:ackley_diagnostics} are useful because they correspond to the only benchmark where the learned policy produced a clear benefit. They show that the best GFlowNet seed converts high proxy scores into a stronger best-so-far trajectory than the best random baseline seed. This does not prove that the reward is perfectly aligned with oracle improvement, but it shows that the reward is at least sometimes good enough to help in a harder, higher-dimensional setting.
+Figure~\ref{fig:ackley_diagnostics} shows that the best GFlowNet seed converts high proxy scores into a stronger best-so-far trajectory than the best random baseline seed on Ackley-10.
 
 \subsection{Compute Trade-off}
 
@@ -211,7 +219,7 @@ Ackley & $18.1526$ & $16.7447$ & $7.52$s & $509.42$s & $67.70\times$ & $1.4079$ 
 \end{tabular}
 \end{table}
 
-The compute trade-off is severe. On Branin and Hartmann-6, the GFlowNet policy is both slower and worse. In those settings, the extra computation is clearly not justified. Ackley-10 is the only benchmark where the additional training cost buys a measurable optimization benefit: GFlowNet improves mean final regret by $1.4079$, but it does so while increasing mean wall-clock time per trial from $7.52$ seconds to $509.42$ seconds. This makes Ackley-10 a meaningful positive result, but also shows that the current method is far from cost-effective.
+The compute trade-off is severe. On Branin and Hartmann-6, the GFlowNet policy is both slower and worse. In those settings, the extra computation is clearly not justified. Ackley-10 is the only benchmark where the additional training cost buys a measurable optimization benefit: GFlowNet improves mean final regret by $1.4079$, but it does so while increasing mean wall-clock time per trial from $7.52$ seconds to $509.42$ seconds. The compute overhead is substantial, and its practical value is clearest only on Ackley-10.
 
 \begin{table}[t]
 \centering
@@ -233,7 +241,7 @@ Table~\ref{tab:runtime_breakdown} explains where the overhead comes from. Surrog
 
 \section{Discussion}
 
-The main conclusion is that the current evidence supports a \emph{conditional} version of the project hypothesis rather than a universal one. Learned mask generation is not yet a clear replacement for random mask sampling on simple benchmarks. However, the positive result on Ackley-10 suggests that a learned policy can become useful when dimensionality increases and the search landscape becomes more difficult.
+The current evidence supports a conditional version of the project hypothesis. Learned mask generation is not yet a clear replacement for random mask sampling on Branin or Hartmann-6, but the positive result on Ackley-10 suggests that it may become useful in some benchmark configurations even when the overall picture remains mixed.
 
 The results also clarify the key bottlenecks:
 
@@ -243,21 +251,34 @@ The results also clarify the key bottlenecks:
     \item \textbf{Compute cost:} the learned policy is expensive. The dedicated timing experiment shows $34\times$ to $68\times$ wall-clock slowdown relative to the random baseline, with most of the extra time spent on GFlowNet training rather than surrogate fitting.
 \end{itemize}
 
-The refactored implementation also changes how these results should be interpreted. In the earlier monolithic prototype, it was reasonable to worry that reward noise, inconsistent evaluation contexts, or train/inference mask mismatch might dominate the comparison. The new package pipeline does not remove all sources of approximation error, but it does remove the most obvious implementation confounds and exposes them through targeted diagnostics. As a result, a negative or mixed outcome now carries more scientific weight: it is closer to evidence about the method, rather than just evidence about a brittle script.
+The controlled evaluation protocol also changes how these results should be interpreted. In an undercontrolled prototype, it would be reasonable to worry that reward noise, inconsistent evaluation contexts, or train/inference mask mismatch might dominate the comparison. The final package pipeline does not remove all sources of approximation error, but it does remove the most obvious implementation confounds and exposes them through targeted diagnostics. As a result, a negative or mixed outcome now carries more scientific weight: it is closer to evidence about the method rather than just evidence about a brittle script.
 
-These observations are still scientifically useful. Even the negative results on Branin and Hartmann-6 are informative because they narrow down the conditions under which GFlowNet-guided mask generation seems worth pursuing. Just as importantly, they now do so under a cleaner and more reproducible experimental protocol.
+These observations are still scientifically useful. Even the negative results on Branin and Hartmann-6 are informative because they narrow down the conditions under which GFlowNet-guided mask generation seems worth pursuing. Just as importantly, they now do so under a more reproducible and interpretable protocol.
+
+We compare against a matched MC-Dropout baseline; broader comparisons to other uncertainty-aware methods are left for future work.
+
+\subsection{Threats to Validity}
+
+\paragraph{Internal validity.} Internal validity is stronger under the final evaluation protocol, but the method still depends on a surrogate-based proxy reward rather than realized oracle improvement. Some mismatch between proxy quality and realized BO progress may therefore remain.
+
+\paragraph{Statistical validity.} The experiments use five random seeds per benchmark. This is sufficient to expose broad qualitative trends, but not to support strong inferential claims. The reported results should therefore be read as evidence of effect direction and rough magnitude rather than as precise estimates of the underlying performance gap.
+
+\paragraph{External validity.} The benchmark suite is intentionally small and synthetic. In particular, dimensionality is confounded with benchmark identity, so the positive result on Ackley-10 should not be interpreted as clean evidence that dimensionality is the primary driver of the benefit of learned mask generation.
+
+\paragraph{Computational validity.} The study is query-efficient in spirit but not wall-clock efficient in practice. Since the mask policy is optimized inside each BO iteration, practical usefulness depends on whether regret reduction is large enough to justify the additional optimization cost.
+
 
 \section{Conclusion}
 
-This report presented an implementation of GFlowNet-guided dropout mask sampling for neural Bayesian optimization and compared it against a matched random-mask baseline on Branin, Hartmann-6, and Ackley-10. The final result is mixed: random masks remain better on the two lower-dimensional benchmarks, while the GFlowNet policy improves regret on Ackley-10. After refactoring the codebase into a controlled package pipeline with shared per-step evaluation contexts, aligned mask semantics, and explicit reward diagnostics, the most defensible conclusion is not simply that the method sometimes works and sometimes fails. It is that the remaining mixed evidence is substantially more trustworthy because the main implementation-level confounds were explicitly addressed.
+The strongest defensible claim from this study is narrower than ``GFlowNets improve neural BO.'' Under a more controlled and reproducible evaluation setup, learned mask generation produced a benefit on Ackley-10, did not outperform a matched random-mask baseline on Branin and Hartmann-6, and incurred substantial computational overhead in all settings. The main contribution of the project is therefore a more credible characterization of when GFlowNet-guided mask search may be worth pursuing, providing evidence of setting-dependent utility rather than uniform gains across all benchmarks.
 
-The next technical priorities are to improve proxy-reward calibration, test stronger contextual conditioning or periodic retraining strategies, and expand the benchmark suite so the dependence on dimensionality and multimodality can be measured more systematically. A second priority is to report the new implementation diagnostics and ablations directly alongside regret curves, so that future iterations of the project can distinguish more sharply between reward-design limitations and genuine limits of GFlowNet-guided mask search.
+The next technical priorities are to improve proxy-reward calibration, test stronger contextual conditioning or periodic retraining strategies, and expand the benchmark suite so the dependence on dimensionality and multimodality can be measured more systematically. A second priority is to report the new diagnostics and ablations directly alongside regret curves, so that future iterations of the project can distinguish more sharply between reward-design limitations and genuine limits of GFlowNet-guided mask search.
 
 \appendix
 
 \section{Additional Diagnostic Plots}
 
-Figures~\ref{fig:branin_diagnostics_appendix} and~\ref{fig:hartmann_diagnostics_appendix} show the same proposal diagnostics as in the Ackley case, but for the Branin and Hartmann-6 benchmarks. These plots help explain the negative results in the main table: on both lower-dimensional tasks, the learned mask policy does not convert high proxy scores into better final best-so-far trajectories than the random baseline.
+Figures~\ref{fig:branin_diagnostics_appendix} and~\ref{fig:hartmann_diagnostics_appendix} show additional proposal diagnostics for the Branin and Hartmann-6 benchmarks.
 
 \begin{figure*}[t]
     \centering

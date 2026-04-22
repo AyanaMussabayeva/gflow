@@ -61,17 +61,69 @@ def _load_json(path: Path) -> dict:
     return json.loads(path.read_text())
 
 
-def _artifact_summary_path(spec_name: str, benchmark_name: str, artifact_dir: str | None = None) -> Path:
+def latest_suite_manifest(suite_name: str) -> Path:
+    candidates = sorted((ARTIFACTS_V2_ROOT / "_suites" / suite_name).glob("*/manifest.json"))
+    if not candidates:
+        raise FileNotFoundError(f"No suite manifest found for suite={suite_name}")
+    return candidates[-1]
+
+
+def load_suite_manifest(suite_name: str, suite_manifest_path: str | None = None) -> tuple[Path, dict]:
+    manifest_path = latest_suite_manifest(suite_name) if suite_manifest_path is None else Path(suite_manifest_path)
+    return manifest_path, _load_json(manifest_path)
+
+
+def resolve_artifact_dir_from_suite_manifest(
+    spec_name: str,
+    benchmark_name: str,
+    suite_name: str,
+    suite_manifest_path: str | None = None,
+) -> Path:
+    _, manifest = load_suite_manifest(suite_name, suite_manifest_path=suite_manifest_path)
+    for run in manifest.get("runs", []):
+        if run.get("spec_name") == spec_name and run.get("benchmark") == benchmark_name:
+            return Path(run["artifact_dir"])
+    raise FileNotFoundError(
+        f"No matching run in suite manifest for suite={suite_name} spec={spec_name} benchmark={benchmark_name}"
+    )
+
+
+def _artifact_summary_path(
+    spec_name: str,
+    benchmark_name: str,
+    artifact_dir: str | None = None,
+    suite_name: str | None = None,
+    suite_manifest_path: str | None = None,
+) -> Path:
     if artifact_dir is not None:
         return Path(artifact_dir) / "summary.json"
+    if suite_name is not None:
+        return resolve_artifact_dir_from_suite_manifest(
+            spec_name=spec_name,
+            benchmark_name=benchmark_name,
+            suite_name=suite_name,
+            suite_manifest_path=suite_manifest_path,
+        ) / "summary.json"
     candidates = sorted((ARTIFACTS_V2_ROOT / spec_name / benchmark_name).glob("*/summary.json"))
     if not candidates:
         raise FileNotFoundError(f"No artifact found for spec={spec_name} benchmark={benchmark_name}")
     return candidates[-1]
 
 
-def load_v2_artifact(spec_name: str, benchmark_name: str, artifact_dir: str | None = None) -> tuple[Path, dict]:
-    summary_path = _artifact_summary_path(spec_name, benchmark_name, artifact_dir)
+def load_v2_artifact(
+    spec_name: str,
+    benchmark_name: str,
+    artifact_dir: str | None = None,
+    suite_name: str | None = None,
+    suite_manifest_path: str | None = None,
+) -> tuple[Path, dict]:
+    summary_path = _artifact_summary_path(
+        spec_name,
+        benchmark_name,
+        artifact_dir,
+        suite_name=suite_name,
+        suite_manifest_path=suite_manifest_path,
+    )
     return summary_path.parent, _load_json(summary_path)
 
 
@@ -95,9 +147,16 @@ def export_report_like_figures(
     benchmark_name: str,
     artifact_dir: str | None = None,
     suite_name: str = "main_v2",
+    suite_manifest_path: str | None = None,
     bundle: ReportAssetBundle | None = None,
 ) -> dict:
-    artifact_root, payload = load_v2_artifact(spec_name, benchmark_name, artifact_dir=artifact_dir)
+    artifact_root, payload = load_v2_artifact(
+        spec_name,
+        benchmark_name,
+        artifact_dir=artifact_dir,
+        suite_name=suite_name,
+        suite_manifest_path=suite_manifest_path,
+    )
     bundle = ReportAssetBundle.create(suite_name) if bundle is None else bundle
     summary = payload["summary"]
     random_trial = select_representative_trial(payload["random_trials"])
