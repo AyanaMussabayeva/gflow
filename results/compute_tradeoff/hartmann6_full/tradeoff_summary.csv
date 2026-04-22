@@ -1,0 +1,2 @@
+benchmark,regret_gain_of_gfn,extra_time_sec_for_gfn,slowdown_factor,regret_gain_per_extra_hour
+hartmann6,-0.14558255672454834,304.95970693386624,53.84921543314226,-1.71857852789067

@@ -1,0 +1,2 @@
+benchmark,regret_gain_of_gfn,extra_time_sec_for_gfn,slowdown_factor,regret_gain_per_extra_hour
+branin,-0.364580821990967,124.315739991772,34.110960508335125,-10.55772148606725

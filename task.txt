@@ -1,0 +1,72 @@
+Overview: Projectsshouldaddressaresearchquestionsuitableforworkshopsubmission(NeurIPS,ICML,
+ICLRworkshops). Deliverablesincludeawrittenreport(4–6pages,NeurIPSformat),reproduciblecode
+repository,anda15-minutefinalpresentation. Chooseoneoptionbeloworproposeyourown(Option7,
+requiresinstructorapprovalbyWeek4).
+Philosophy and Evaluation Criteria
+Thiscourseprojectisdesignedtomirrorthefirststageoftheresearchcycle. Giventhecompressedtimeline
+ofasinglesemester, weprioritizeintellectual honesty and depth of analysis overrawperformance
+metrics.
+• The Value of Negative Results: Inresearch,a“negativeresult”(e.g.,“We implemented Successor
+Features for GFlowNets and found they do not converge on non-linear rewards”)isavaluablecontribu-
+tion. Ifyourhypothesisisdisproven,yourreportshouldfocusonarigorouspost-mortem: identifythe
+mathematicalorempiricalbottlenecksthatcausedthefailure.
+• Scope and “Suggested” Tasks: Thetaskslistedundereachoptionaresuggestions tohelpyoudefine
+aresearchdirection. Youarenotrequiredtocompleteeverybulletpoint. Youareencouragedto“zoom
+in”onaspecificsub-questionthatinterestsyou.
+• Proof-of-Concept (PoC): Youarenotexpectedtobeatstate-of-the-artresultsonmassivebenchmarks.
+Demonstratingane!ectortestingapropertyonasimplified,controlledenvironment(e.g.,Hypergrid,
+CartPole,oracustomMinigrid setup)isoftenthebestwaytoshowresearchcompetence.
+• E!ort and Rigor: Your grade will be determined by the quality of your experimental design, the
+clarityofyourreasoning,andyourabilitytorelateyourfindingstotheexistingliterature. Significant
+e!ortinimplementationandcriticalthinkingishighlyrewarded,regardlessofthefinal“success”ofthe
+agent.
+
+PROJECT TASK DESCRIPTION 
+
+GFlowNet-Guided Bayesian Optimization
+Bayesian Optimization (BO) is a powerful framework for optimizing expensive black-box functions by
+carefully balancing exploration and exploitation (Snoek et al., NeurIPS 2012). The standard approach
+fits a surrogate model (typically a Gaussian Process) to observed data and uses an acquisition function
+(Expected Improvement, Upper Confidence Bound) to select the next query point. While GPs provide
+well-calibrated uncertainty estimates, they scale poorly to high dimensions and struggle with complex,
+structuredinputspaces.
+NeuralNetworksurrogateso!erflexibilityandscalabilitybutpresentafundamentalchallenge: howto
+quantifyuncertaintyforprincipledexploration? MC-Dropout(Gal&Ghahramani,ICML2016)provides
+apracticalapproximationbyinterpretingdropoutasapproximateBayesianinference—samplingrandom
+dropout masks yields an implicit ensemble. However, this exploration is undirected : masks are sampled
+uniformlyatrandom,bearingnorelationshiptowhichperturbationswouldrevealinformativeregionsof
+thesearchspace.
+This project proposes GFN-BO: replacing random mask sampling with a learned generative policy.
+A GFlowNet is trained to generate dropout masks with probability proportional to their “improvement
+potential”—howmuchqueryingtheresultingmaximizerwouldimproveoverthecurrentbest. Thistrans-
+formsexplorationfromrandomperturbationtotargetedsearchoverthespaceofsurrogateinterpretations.
+Formally,formaskm,definethemaskedsurrogate’smaximizerx→
+m =argmaxx fε(x;m)andreward:
+R(m)=max oracle(x→
+m)→ ybest, 0
+TheGFlowNetlearnsP(m)↑ R(m)ϑ ,concentratingprobabilityonmasksthatleadtohighimprovement
+whilemaintainingdiversityoverpromisingdirections.
+Research Questions
+1. CanlearnedmaskgenerationoutperformrandomMC-DropoutforBOexploration? Onwhichproblem
+classes(dimensionality,multimodality,noiselevel)aregainsmostpronounced?
+2. HowshouldtheGFlowNethandlenon-stationarityasthesurrogateevolves? Explorecontextualcondi-
+tioningondatasetstatistics,continualfine-tuning,andperiodicretraining.
+3. Whatisthecomputationaltrade-o!? GFlowNettrainingrequiresmanysurrogateevaluations—when
+isthisoverheadjustifiedbyreducedoraclequeries?
+4. How does GFN-BO compare to other uncertainty-aware methods like Deep Ensembles and concrete
+dropout?
+Suggested Approach
+Implement a sequential GFlowNet that generates dropout masks layer-by-layer for an MLP surrogate.
+Address non-stationarity by conditioning the GFlowNet on an embedding of the current dataset c =
+embed(Dt). Sinceoraclequeriesareexpensive, usesurrogatepredictionsunderheld-outmasksasproxy
+rewardsduringGFlowNettraining. Evaluateonstandardbenchmarks: Branin(2D),Hartmann-6(6D),
+Ackley(10D),andhigher-dimensionalsyntheticfunctions. Reportregretcurvesagainstnumberoforacle
+queries. Prior work on GFlowNets for Dropout (Liu et al., ICML 2023) provides relevant architectural
+insights.
+Key References
+• Bengio,Y.etal. (2023). GFlowNetFoundations. JMLR.
+• Gal,Y.&Ghahramani,Z.(2015). DropoutasaBayesianApproximation. ICML.
+• Snoek,J.etal. (2012). PracticalBayesianOptimizationofMachineLearningAlgorithms. NeurIPS.
+• Jain,M.etal. (2023). Multi-ObjectiveGFlowNets. ICML.
+• Hernandez-Garcia,A.etal. (2023). Multi-FidelityActiveLearningwithGFlowNets. arXiv.
+• Liu,D.etal. (2023). GFlowOut: DropoutwithGenerativeFlowNetworks. ICML.

@@ -1,0 +1,2 @@
+benchmark,regret_gain_of_gfn,extra_time_sec_for_gfn,slowdown_factor,regret_gain_per_extra_hour
+ackley10,1.4078975677490249,501.8928988161497,67.69784960751709,10.098631114032012
