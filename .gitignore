@@ -1,3 +1,6 @@
 .DS_Store
 __pycache__/
 *.pyc
+*.pdf
+artifacts_v2/
+report_assets_v2/

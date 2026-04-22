@@ -1,0 +1,49 @@
+{
+  "entries": [
+    {
+      "name": "reward_protocol_softplus_scaled_v2",
+      "benchmark": "branin",
+      "reward_protocol": "softplus_scaled"
+    },
+    {
+      "name": "reward_protocol_zscore_v2",
+      "benchmark": "branin",
+      "reward_protocol": "zscore"
+    },
+    {
+      "name": "reward_protocol_rank_v2",
+      "benchmark": "branin",
+      "reward_protocol": "rank"
+    },
+    {
+      "name": "reward_protocol_softplus_scaled_v2",
+      "benchmark": "hartmann6",
+      "reward_protocol": "softplus_scaled"
+    },
+    {
+      "name": "reward_protocol_zscore_v2",
+      "benchmark": "hartmann6",
+      "reward_protocol": "zscore"
+    },
+    {
+      "name": "reward_protocol_rank_v2",
+      "benchmark": "hartmann6",
+      "reward_protocol": "rank"
+    },
+    {
+      "name": "reward_protocol_softplus_scaled_v2",
+      "benchmark": "ackley10",
+      "reward_protocol": "softplus_scaled"
+    },
+    {
+      "name": "reward_protocol_zscore_v2",
+      "benchmark": "ackley10",
+      "reward_protocol": "zscore"
+    },
+    {
+      "name": "reward_protocol_rank_v2",
+      "benchmark": "ackley10",
+      "reward_protocol": "rank"
+    }
+  ]
+}

@@ -1,0 +1,19 @@
+{
+  "entries": [
+    {
+      "name": "main_v2",
+      "benchmark": "branin",
+      "reward_protocol": "rank"
+    },
+    {
+      "name": "main_v2",
+      "benchmark": "hartmann6",
+      "reward_protocol": "rank"
+    },
+    {
+      "name": "main_v2",
+      "benchmark": "ackley10",
+      "reward_protocol": "rank"
+    }
+  ]
+}

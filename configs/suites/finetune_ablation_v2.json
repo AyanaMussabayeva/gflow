@@ -1,0 +1,52 @@
+{
+  "entries": [
+    {
+      "name": "finetune_continual_v2",
+      "benchmark": "branin",
+      "reward_protocol": "rank",
+      "overrides": {
+        "continual_finetune": true
+      }
+    },
+    {
+      "name": "finetune_restart_v2",
+      "benchmark": "branin",
+      "reward_protocol": "rank",
+      "overrides": {
+        "continual_finetune": false
+      }
+    },
+    {
+      "name": "finetune_continual_v2",
+      "benchmark": "hartmann6",
+      "reward_protocol": "rank",
+      "overrides": {
+        "continual_finetune": true
+      }
+    },
+    {
+      "name": "finetune_restart_v2",
+      "benchmark": "hartmann6",
+      "reward_protocol": "rank",
+      "overrides": {
+        "continual_finetune": false
+      }
+    },
+    {
+      "name": "finetune_continual_v2",
+      "benchmark": "ackley10",
+      "reward_protocol": "rank",
+      "overrides": {
+        "continual_finetune": true
+      }
+    },
+    {
+      "name": "finetune_restart_v2",
+      "benchmark": "ackley10",
+      "reward_protocol": "rank",
+      "overrides": {
+        "continual_finetune": false
+      }
+    }
+  ]
+}

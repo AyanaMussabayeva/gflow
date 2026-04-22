@@ -1,0 +1,23 @@
+{
+  "scale": {
+    "n_iter": 0.2,
+    "surrogate_epochs": 0.1333,
+    "n_candidates": 0.125,
+    "heldout_mask_samples": 0.3333,
+    "random_mask_samples": 0.125,
+    "gfn_mask_samples": 0.125,
+    "gfn_steps": 0.05,
+    "gfn_batch_size": 0.3333,
+    "repeat_eval_repeats": 1.0
+  },
+  "limits": {
+    "n_iter": 4,
+    "surrogate_epochs": 40,
+    "n_candidates": 256,
+    "heldout_mask_samples": 8,
+    "random_mask_samples": 12,
+    "gfn_mask_samples": 12,
+    "gfn_steps": 8,
+    "gfn_batch_size": 6
+  }
+}
