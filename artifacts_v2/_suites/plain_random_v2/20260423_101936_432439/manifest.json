@@ -1,0 +1,183 @@
+{
+  "suite": "plain_random_v2",
+  "profile": "smoke",
+  "methods": [
+    "random"
+  ],
+  "runs": [
+    {
+      "spec_name": "plain_random_v2",
+      "benchmark": "branin",
+      "methods": [
+        "random"
+      ],
+      "artifact_dir": "/Users/ayana.mussabayeva/projects/domaha/sequential_desicion_project/artifacts_v2/plain_random_v2/branin/20260423_101936_433716",
+      "summary": {
+        "random": {
+          "mean_regret": [
+            3.3166191577911377,
+            3.3166191577911377,
+            3.3166191577911377,
+            3.0979182720184326
+          ],
+          "std_regret": [
+            1.539430022239685,
+            1.539430022239685,
+            1.539430022239685,
+            1.536464810371399
+          ],
+          "mean_best_value": [
+            -3.7145066261291504,
+            -3.7145066261291504,
+            -3.7145066261291504,
+            -3.495805263519287
+          ],
+          "std_best_value": [
+            1.539429783821106,
+            1.539429783821106,
+            1.539429783821106,
+            1.536464810371399
+          ],
+          "mean_query_value": [
+            -51.25102615356445,
+            -10.263128280639648,
+            -11.260883331298828,
+            -9.659090042114258
+          ],
+          "std_query_value": [
+            88.29004669189453,
+            5.744214057922363,
+            5.235602378845215,
+            5.529808044433594
+          ],
+          "final_regret_mean": 3.0979182720184326,
+          "final_regret_std": 1.536464810371399,
+          "floor_reward_fraction_mean": 0.0,
+          "step_reward_std_mean": 0.0,
+          "step_improvement_std_mean": 0.0,
+          "same_mask_repeat_std_mean": 1.2396825551986694,
+          "proxy_actual_gain_corr_mean": -0.2515079379081726,
+          "total_time_mean_sec": 0.3322577418293804
+        },
+        "gfn": null,
+        "tradeoff": null
+      }
+    },
+    {
+      "spec_name": "plain_random_v2",
+      "benchmark": "hartmann6",
+      "methods": [
+        "random"
+      ],
+      "artifact_dir": "/Users/ayana.mussabayeva/projects/domaha/sequential_desicion_project/artifacts_v2/plain_random_v2/hartmann6/20260423_101938_957818",
+      "summary": {
+        "random": {
+          "mean_regret": [
+            2.310534954071045,
+            2.153947114944458,
+            2.153947114944458,
+            2.092768430709839
+          ],
+          "std_regret": [
+            0.8378008604049683,
+            0.8755590319633484,
+            0.8755590319633484,
+            0.8200550675392151
+          ],
+          "mean_best_value": [
+            1.0118331909179688,
+            1.1684211492538452,
+            1.1684211492538452,
+            1.2295995950698853
+          ],
+          "std_best_value": [
+            0.8378008604049683,
+            0.8755590319633484,
+            0.8755590319633484,
+            0.8200551271438599
+          ],
+          "mean_query_value": [
+            0.11526341736316681,
+            0.4195377230644226,
+            0.22338728606700897,
+            0.45901569724082947
+          ],
+          "std_query_value": [
+            0.07963734865188599,
+            0.6422432065010071,
+            0.214982271194458,
+            0.2180188149213791
+          ],
+          "final_regret_mean": 2.092768430709839,
+          "final_regret_std": 0.8200550675392151,
+          "floor_reward_fraction_mean": 0.0,
+          "step_reward_std_mean": 0.0,
+          "step_improvement_std_mean": 0.0,
+          "same_mask_repeat_std_mean": 0.020429424941539764,
+          "proxy_actual_gain_corr_mean": -0.2620505690574646,
+          "total_time_mean_sec": 0.09123227500822395
+        },
+        "gfn": null,
+        "tradeoff": null
+      }
+    },
+    {
+      "spec_name": "plain_random_v2",
+      "benchmark": "ackley10",
+      "methods": [
+        "random"
+      ],
+      "artifact_dir": "/Users/ayana.mussabayeva/projects/domaha/sequential_desicion_project/artifacts_v2/plain_random_v2/ackley10/20260423_101940_085403",
+      "summary": {
+        "random": {
+          "mean_regret": [
+            20.304357528686523,
+            20.304357528686523,
+            20.304357528686523,
+            20.304357528686523
+          ],
+          "std_regret": [
+            0.10862161964178085,
+            0.10862161964178085,
+            0.10862161964178085,
+            0.10862161964178085
+          ],
+          "mean_best_value": [
+            -20.304357528686523,
+            -20.304357528686523,
+            -20.304357528686523,
+            -20.304357528686523
+          ],
+          "std_best_value": [
+            0.10862161964178085,
+            0.10862161964178085,
+            0.10862161964178085,
+            0.10862161964178085
+          ],
+          "mean_query_value": [
+            -21.46600341796875,
+            -21.29184341430664,
+            -21.495189666748047,
+            -21.273632049560547
+          ],
+          "std_query_value": [
+            0.37780889868736267,
+            0.19318808615207672,
+            0.34643906354904175,
+            0.25071579217910767
+          ],
+          "final_regret_mean": 20.304357528686523,
+          "final_regret_std": 0.10862161964178085,
+          "floor_reward_fraction_mean": 0.0,
+          "step_reward_std_mean": 0.0,
+          "step_improvement_std_mean": 0.0,
+          "same_mask_repeat_std_mean": 0.0262942872941494,
+          "proxy_actual_gain_corr_mean": -0.3850482106208801,
+          "total_time_mean_sec": 0.09980438337661326
+        },
+        "gfn": null,
+        "tradeoff": null
+      }
+    }
+  ]
+}

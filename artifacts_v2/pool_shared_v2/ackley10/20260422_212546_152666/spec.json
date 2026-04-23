@@ -1,0 +1,36 @@
+{
+  "name": "pool_shared_v2",
+  "benchmark_name": "ackley10",
+  "seeds": [
+    0,
+    1
+  ],
+  "n_init": 20,
+  "n_iter": 4,
+  "mask_space": {
+    "hidden_dim": 128,
+    "block_size": 8,
+    "keep_prob": 0.9
+  },
+  "surrogate_dropout_p": 0.1,
+  "surrogate_epochs": 40,
+  "surrogate_lr": 0.001,
+  "n_candidates": 256,
+  "heldout_mask_samples": 8,
+  "random_mask_samples": 12,
+  "gfn_mask_samples": 12,
+  "gfn_hidden_size": 128,
+  "gfn_steps": 8,
+  "gfn_batch_size": 6,
+  "gfn_lr": 0.001,
+  "continual_finetune": true,
+  "shared_step_context": true,
+  "use_block_mask_training": true,
+  "repeat_eval_repeats": 5,
+  "reward_spec": {
+    "protocol": "rank",
+    "proxy_beta": 0.6,
+    "reward_temperature": 0.5,
+    "epsilon": 0.0001
+  }
+}

@@ -1,0 +1,34 @@
+{
+  "suite_name": "main_v2",
+  "spec_name": "main_v2",
+  "exports": {
+    "branin": {
+      "artifact_root": "/Users/ayana.mussabayeva/projects/domaha/sequential_desicion_project/artifacts_v2/main_v2/branin/20260422_211354_993327",
+      "regret_comparison": "/Users/ayana.mussabayeva/projects/domaha/sequential_desicion_project/report_assets_v2/main_v2/20260422_211440_067645/img/branin_regret_comparison.png",
+      "regret_alias": "/Users/ayana.mussabayeva/projects/domaha/sequential_desicion_project/report_assets_v2/main_v2/20260422_211440_067645/img/branin_regret.png",
+      "random_diagnostics": "/Users/ayana.mussabayeva/projects/domaha/sequential_desicion_project/report_assets_v2/main_v2/20260422_211440_067645/img/branin_random_diagnostics.png",
+      "gfn_diagnostics": "/Users/ayana.mussabayeva/projects/domaha/sequential_desicion_project/report_assets_v2/main_v2/20260422_211440_067645/img/branin_gfn_diagnostics.png",
+      "reward_hist": "/Users/ayana.mussabayeva/projects/domaha/sequential_desicion_project/report_assets_v2/main_v2/20260422_211440_067645/img/branin_reward_hist.png",
+      "legacy_vs_v2": "/Users/ayana.mussabayeva/projects/domaha/sequential_desicion_project/report_assets_v2/main_v2/20260422_211440_067645/comparison/branin_legacy_vs_v2_regret.png"
+    },
+    "hartmann6": {
+      "artifact_root": "/Users/ayana.mussabayeva/projects/domaha/sequential_desicion_project/artifacts_v2/main_v2/hartmann6/20260422_211357_020092",
+      "regret_comparison": "/Users/ayana.mussabayeva/projects/domaha/sequential_desicion_project/report_assets_v2/main_v2/20260422_211440_067645/img/hartmann6_regret_comparison.png",
+      "regret_alias": null,
+      "random_diagnostics": "/Users/ayana.mussabayeva/projects/domaha/sequential_desicion_project/report_assets_v2/main_v2/20260422_211440_067645/img/hartmann6_random_diagnostics.png",
+      "gfn_diagnostics": "/Users/ayana.mussabayeva/projects/domaha/sequential_desicion_project/report_assets_v2/main_v2/20260422_211440_067645/img/hartmann6_gfn_diagnostics.png",
+      "reward_hist": "/Users/ayana.mussabayeva/projects/domaha/sequential_desicion_project/report_assets_v2/main_v2/20260422_211440_067645/img/hartmann6_reward_hist.png",
+      "legacy_vs_v2": "/Users/ayana.mussabayeva/projects/domaha/sequential_desicion_project/report_assets_v2/main_v2/20260422_211440_067645/comparison/hartmann6_legacy_vs_v2_regret.png"
+    },
+    "ackley10": {
+      "artifact_root": "/Users/ayana.mussabayeva/projects/domaha/sequential_desicion_project/artifacts_v2/main_v2/ackley10/20260422_211358_461537",
+      "regret_comparison": "/Users/ayana.mussabayeva/projects/domaha/sequential_desicion_project/report_assets_v2/main_v2/20260422_211440_067645/img/ackley10_regret_comparison.png",
+      "regret_alias": null,
+      "random_diagnostics": "/Users/ayana.mussabayeva/projects/domaha/sequential_desicion_project/report_assets_v2/main_v2/20260422_211440_067645/img/ackley10_random_diagnostics.png",
+      "gfn_diagnostics": "/Users/ayana.mussabayeva/projects/domaha/sequential_desicion_project/report_assets_v2/main_v2/20260422_211440_067645/img/ackley10_gfn_diagnostics.png",
+      "reward_hist": "/Users/ayana.mussabayeva/projects/domaha/sequential_desicion_project/report_assets_v2/main_v2/20260422_211440_067645/img/ackley10_reward_hist.png",
+      "legacy_vs_v2": "/Users/ayana.mussabayeva/projects/domaha/sequential_desicion_project/report_assets_v2/main_v2/20260422_211440_067645/comparison/ackley10_legacy_vs_v2_regret.png"
+    }
+  },
+  "suite_reward_hist": "/Users/ayana.mussabayeva/projects/domaha/sequential_desicion_project/report_assets_v2/main_v2/20260422_211440_067645/img/gfn_reward_hist.png"
+}
