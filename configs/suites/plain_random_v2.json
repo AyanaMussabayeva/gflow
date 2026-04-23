@@ -1,0 +1,28 @@
+{
+  "entries": [
+    {
+      "name": "plain_random_v2",
+      "benchmark": "branin",
+      "reward_protocol": "rank",
+      "overrides": {
+        "random_mask_samples": 1
+      }
+    },
+    {
+      "name": "plain_random_v2",
+      "benchmark": "hartmann6",
+      "reward_protocol": "rank",
+      "overrides": {
+        "random_mask_samples": 1
+      }
+    },
+    {
+      "name": "plain_random_v2",
+      "benchmark": "ackley10",
+      "reward_protocol": "rank",
+      "overrides": {
+        "random_mask_samples": 1
+      }
+    }
+  ]
+}

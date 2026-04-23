@@ -1,14 +1,13 @@
 \documentclass[aspectratio=169]{beamer}
-% Alternatives (use the one that matches your projector/screen best):
-% \documentclass[aspectratio=43]{beamer}   % 4:3
-% \documentclass[aspectratio=11]{beamer}   % 1:1 (will waste space on 16:9 screens)
+% Alternatives:
+% \documentclass[aspectratio=43]{beamer}
+% \documentclass[aspectratio=11]{beamer}
 
 % ===================== Theme =====================
 \usetheme{Madrid}
 \usecolortheme{default}
 \usefonttheme{professionalfonts}
 \setbeamertemplate{navigation symbols}{}
-% Remove the default footline to gain vertical space (poster-style)
 \setbeamertemplate{footline}{}
 
 % ===================== Packages =====================
@@ -17,13 +16,15 @@
 \usepackage{graphicx}
 \usepackage{url}
 \usepackage[most]{tcolorbox}
-\usepackage{anyfontsize} % allow explicit tiny font sizes
+\usepackage{anyfontsize}
+\usepackage{array}
+\usepackage{ragged2e}
 
 \newcommand{\TitleSize}{\fontsize{18}{24}\selectfont}
 \newcommand{\FrameTitleSize}{\fontsize{12}{14}\selectfont}
 \newcommand{\MainSize}{\fontsize{8}{7}\selectfont}
 \newcommand{\CardTitleSize}{\fontsize{10}{12}\selectfont}
-\newcommand{\TinyCap}{\fontsize{8.0}{9}\selectfont}
+\newcommand{\TinyCap}{\fontsize{7.6}{8.6}\selectfont}
 
 \setbeamerfont{title}{size=\TitleSize,series=\bfseries}
 \setbeamerfont{frametitle}{size=\FrameTitleSize,series=\bfseries}
@@ -36,22 +37,7 @@
 \setlength{\abovedisplayshortskip}{1pt}
 \setlength{\belowdisplayshortskip}{1pt}
 \setlength{\parskip}{0pt}
-\setlength{\columnsep}{1.15cm}  % more gutter between columns
-
-% Leave width slack so columns don't "stick" visually
-\newcommand{\colw}{0.475\textwidth}
-
-% --- Make columns fill the available frame height and distribute spacing evenly
-\newcommand{\ColH}{0.83\textheight} % tune: 0.80–0.86 works well depending on frametitle height
-
-\newenvironment{colfill}[1]{%
-  \begin{minipage}[t][\ColH]{#1}\raggedright
-}{%
-  \end{minipage}
-}
-% Optional: shorter alias
-\newcommand{\spacer}{\vfill}
-
+\setlength{\columnsep}{0.85cm}
 
 % ===================== Card style =====================
 \definecolor{CardBG}{RGB}{250,250,252}
@@ -77,27 +63,11 @@
 \newtcolorbox{cardW}[2][]{title={#2},colframe=CardWarn,#1}
 \newtcolorbox{cardG}[2][]{title={#2},colframe=CardGood,#1}
 
-% ===================== Figure helpers =====================
-\newcommand{\FIGDIR}{/figures/}
-\newcommand{\tryfig}[1]{\FIGDIR#1}
-\newcommand{\safefig}[2]{%
-  \IfFileExists{\tryfig{#1}}{%
-    \includegraphics[width=\linewidth,height=0.34\textheight,keepaspectratio]{\tryfig{#1}}%
-  }{%
-    \IfFileExists{figures/#1}{%
-      \includegraphics[width=\linewidth,height=0.34\textheight,keepaspectratio]{figures/#1}%
-    }{
-    }
-  }%
-  \vspace{-0.25em}\par{\TinyCap #2}%
-}
-
 % ===================== Meta =====================
 \title[GFlowNet-BO]{GFlowNet-Guided Dropout Mask Sampling for Neural Bayesian Optimization}
 \author{Anuar Aimoldin}
-\institute{Course Project Presentation\[-0.2em]\TinyCap Learned dropout-mask generation for neural Bayesian optimization under a controlled evaluation protocol}
+\institute{Course Project Presentation\\[-0.2em]\TinyCap Learned dropout-mask generation for neural Bayesian optimization under a controlled evaluation protocol}
 \date{}
-
 
 \begin{document}
 
@@ -114,16 +84,16 @@
 \begin{frame}{Problem, gap, and project question}
 \vspace{-0.55em}
 \begin{columns}[T,onlytextwidth]
-\column{0.47\textwidth}
-\begin{minipage}[t][0.82\textheight]{\linewidth}\vspace{0pt}
+\column{0.48\textwidth}
+\begin{minipage}[t][0.80\textheight]{\linewidth}\vspace{0pt}
   \begin{cardA}{Why this problem matters}
-  Bayesian optimization is effective for expensive black-box objectives, but practical BO in flexible neural surrogates still depends on a useful uncertainty mechanism.
+  Bayesian optimization is effective for expensive black-box objectives, but practical BO with flexible neural surrogates still needs a useful uncertainty mechanism.
   \end{cardA}
 
   \vfill
 
   \begin{card}{Standard neural baseline}
-  MC-Dropout interprets dropout as approximate Bayesian inference: different masks induce different surrogate views and therefore predictive uncertainty.
+  MC-Dropout interprets dropout as approximate Bayesian inference: different masks induce different surrogate views and predictive uncertainty.
   \end{card}
 
   \vfill
@@ -133,8 +103,8 @@
   \end{cardW}
 \end{minipage}
 
-\column{0.47\textwidth}
-\begin{minipage}[t][0.82\textheight]{\linewidth}\vspace{0pt}
+\column{0.48\textwidth}
+\begin{minipage}[t][0.80\textheight]{\linewidth}\vspace{0pt}
   \begin{cardG}{Project question}
   Can a \textbf{learned mask generator} outperform random MC-Dropout mask sampling for Bayesian optimization exploration?
   \end{cardG}
@@ -153,7 +123,7 @@
   \vfill
 
   \begin{card}{Main framing}
-  This project treats dropout-mask generation as a \textbf{structured sampling problem} and uses a GFlowNet to bias probability toward masks with higher improvement potential.
+  The project treats dropout-mask generation as a \textbf{structured sampling problem} and uses a GFlowNet to bias probability toward masks with higher improvement potential.
   \end{card}
 \end{minipage}
 \end{columns}
@@ -163,8 +133,8 @@
 \begin{frame}{Method overview}
 \vspace{-0.55em}
 \begin{columns}[T,onlytextwidth]
-\column{0.47\textwidth}
-\begin{minipage}[t][0.82\textheight]{\linewidth}\vspace{0pt}
+\column{0.48\textwidth}
+\begin{minipage}[t][0.80\textheight]{\linewidth}\vspace{0pt}
   \begin{cardA}{Surrogate side}
   \begin{itemize}
     \item two-hidden-layer dropout MLP
@@ -176,9 +146,9 @@
   \vfill
 
   \begin{card}{Proposal generation}
-  For candidate pool $\mathcal C_t$, each mask proposes
+  For candidate pool $C_t$, each mask proposes
   \[
-  x_m=\arg\max_{x\in\mathcal C_t}\hat f_\theta(x;m).
+  x_m=\arg\max_{x\in C_t}\hat f_\theta(x;m).
   \]
   The proposal is then evaluated with a held-out ensemble of random masks.
   \end{card}
@@ -191,8 +161,8 @@
   \end{cardG}
 \end{minipage}
 
-\column{0.47\textwidth}
-\begin{minipage}[t][0.82\textheight]{\linewidth}\vspace{0pt}
+\column{0.48\textwidth}
+\begin{minipage}[t][0.80\textheight]{\linewidth}\vspace{0pt}
   \begin{card}{Proxy reward}
   Held-out masks provide proxy mean and proxy uncertainty. The reward favors masks that both:
   \begin{itemize}
@@ -223,11 +193,63 @@
 \end{frame}
 
 % ------------------------------------------------
+\begin{frame}{Procedure at one BO iteration}
+\vspace{-0.55em}
+\begin{columns}[T,onlytextwidth]
+\column{0.49\textwidth}
+\begin{minipage}[t][0.80\textheight]{\linewidth}\vspace{0pt}
+  \begin{cardA}{Step-by-step procedure}
+  \begin{enumerate}
+    \item Train the masked neural surrogate on current dataset $D_t$.
+    \item Sample a set of candidate masks.
+    \item For each mask, select its preferred point from the candidate pool.
+    \item Score that proposal with the proxy reward.
+    \item Query the point from the best sampled mask.
+  \end{enumerate}
+  \end{cardA}
+
+  \vfill
+
+  \begin{card}{What is held fixed}
+  Both methods use the same surrogate, BO horizon, candidate-pool size, held-out evaluation protocol, and per-step mask budget.
+  \end{card}
+\end{minipage}
+
+\column{0.47\textwidth}
+\begin{minipage}[t][0.80\textheight]{\linewidth}\vspace{0pt}
+  \begin{cardG}{Random baseline}
+  \begin{itemize}
+    \item sample block-wise masks uniformly
+    \item evaluate each sampled mask with the same reward protocol
+    \item query the proposal from the best sampled mask
+  \end{itemize}
+  \end{cardG}
+
+  \vfill
+
+  \begin{cardW}{GFlowNet policy}
+  \begin{itemize}
+    \item train a sequential policy so mask probability tracks reward
+    \item sample masks from that learned policy
+    \item again query the proposal from the best sampled mask
+  \end{itemize}
+  \end{cardW}
+
+  \vfill
+
+  \begin{card}{Main contrast}
+  The comparison isolates \textbf{mask-sampling policy} rather than differences in the surrounding BO loop.
+  \end{card}
+\end{minipage}
+\end{columns}
+\end{frame}
+
+% ------------------------------------------------
 \begin{frame}{Experimental setup and controlled evaluation}
 \vspace{-0.55em}
 \begin{columns}[T,onlytextwidth]
-\column{0.47\textwidth}
-\begin{minipage}[t][0.82\textheight]{\linewidth}\vspace{0pt}
+\column{0.46\textwidth}
+\begin{minipage}[t][0.80\textheight]{\linewidth}\vspace{0pt}
   \begin{cardA}{Benchmarks}
   \begin{itemize}
     \item Branin (2D)
@@ -249,22 +271,14 @@
 
   \vfill
 
-  \begin{card}{Benchmark configurations}
-  \centering
-  \begin{tabular}{lrrrrrr}
-  \toprule
-  Benchmark & Dim & $n_0$ & Iters & H & Pool & Steps \\
-  \midrule
-  Branin & 2 & 8 & 18 & 64 & 2048 & 160 \\
-  Hartmann-6 & 6 & 14 & 22 & 96 & 4096 & 180 \\
-  Ackley & 10 & 20 & 24 & 128 & 4096 & 200 \\
-  \bottomrule
-  \end{tabular}
+  \begin{card}{Metric}
+  Main metric: \textbf{simple regret}.\\[0.2em]
+  Read the 5-seed results mainly as \textbf{effect-size evidence}, not as strong significance claims.
   \end{card}
 \end{minipage}
 
-\column{0.47\textwidth}
-\begin{minipage}[t][0.82\textheight]{\linewidth}\vspace{0pt}
+\column{0.50\textwidth}
+\begin{minipage}[t][0.80\textheight]{\linewidth}\vspace{0pt}
   \begin{cardW}{Controlled protocol}
   \begin{itemize}
     \item shared candidate pool within each BO step
@@ -276,15 +290,24 @@
 
   \vfill
 
-  \begin{cardG}{Why this matters}
-  These controls reduce the chance that observed differences come from evaluation noise, train/inference mismatch, or inconsistent comparison contexts.
+  \begin{cardG}{Benchmark configurations}
+  \centering
+  \scriptsize
+  \begin{tabular}{lrrrrrr}
+  \toprule
+  Benchmark & Dim & $n_0$ & Iters & H & Pool & Steps \\
+  \midrule
+  Branin & 2 & 8 & 18 & 64 & 2048 & 160 \\
+  Hartmann-6 & 6 & 14 & 22 & 96 & 4096 & 180 \\
+  Ackley & 10 & 20 & 24 & 128 & 4096 & 200 \\
+  \bottomrule
+  \end{tabular}
   \end{cardG}
 
   \vfill
 
-  \begin{card}{Metric}
-  Main metric: \textbf{simple regret}.\\[0.2em]
-  Read the 5-seed results mainly as \textbf{effect-size evidence}, not as strong significance claims.
+  \begin{card}{Why this matters}
+  These controls reduce the chance that observed differences come from evaluation noise, train/inference mismatch, or inconsistent comparison contexts.
   \end{card}
 \end{minipage}
 \end{columns}
@@ -295,28 +318,28 @@
 \vspace{-0.55em}
 \begin{columns}[T,onlytextwidth]
 \column{0.32\textwidth}
-\begin{minipage}[t][0.8\textheight]{\linewidth}\vspace{0pt}
+\begin{minipage}[t][0.78\textheight]{\linewidth}\vspace{0pt}
   \begin{card}{Branin (2D)}
   \centering
-  \includegraphics[width=\linewidth,height=0.60\textheight,keepaspectratio]{img/branin_regret_comparison.png}
+  \includegraphics[width=\linewidth,height=0.58\textheight,keepaspectratio]{img/branin_regret_comparison.png}
   \vspace{-0.2em}\par{\TinyCap Random remains stronger.}
   \end{card}
 \end{minipage}
 
 \column{0.32\textwidth}
-\begin{minipage}[t][0.8\textheight]{\linewidth}\vspace{0pt}
+\begin{minipage}[t][0.78\textheight]{\linewidth}\vspace{0pt}
   \begin{card}{Hartmann-6 (6D)}
   \centering
-  \includegraphics[width=\linewidth,height=0.60\textheight,keepaspectratio]{img/hartmann6_regret_comparison.png}
+  \includegraphics[width=\linewidth,height=0.58\textheight,keepaspectratio]{img/hartmann6_regret_comparison.png}
   \vspace{-0.2em}\par{\TinyCap Random still wins.}
   \end{card}
 \end{minipage}
 
 \column{0.32\textwidth}
-\begin{minipage}[t][0.8\textheight]{\linewidth}\vspace{0pt}
+\begin{minipage}[t][0.78\textheight]{\linewidth}\vspace{0pt}
   \begin{cardG}{Ackley-10 (10D)}
   \centering
-  \includegraphics[width=\linewidth,height=0.60\textheight,keepaspectratio]{img/ackley10_regret_comparison.png}
+  \includegraphics[width=\linewidth,height=0.58\textheight,keepaspectratio]{img/ackley10_regret_comparison.png}
   \vspace{-0.2em}\par{\TinyCap GFlowNet overtakes random and finishes lower.}
   \end{cardG}
 \end{minipage}
@@ -327,43 +350,47 @@
 \begin{frame}{Final performance summary}
 \vspace{-0.55em}
 \begin{columns}[T,onlytextwidth]
-\column{0.56\textwidth}
-\begin{minipage}[t][0.82\textheight]{\linewidth}\vspace{0pt}
-  \begin{cardA}{Final regret over 5 seeds}
-  \centering
-  \begin{tabular}{lccc}
-  \toprule
-  Benchmark & Random & GFlowNet & Better \\
-  \midrule
-  Branin (2D) & $1.7813 \pm 1.1734$ & $2.1459 \pm 0.7910$ & Random \\
-  Hartmann-6 (6D) & $0.5571 \pm 0.3059$ & $0.7027 \pm 0.5144$ & Random \\
-  Ackley (10D) & $18.1526 \pm 1.1661$ & $16.7447 \pm 1.5421$ & GFlowNet \\
-  \bottomrule
-  \end{tabular}
+\column{0.52\textwidth}
+\begin{minipage}[t][0.80\textheight]{\linewidth}\vspace{0pt}
+  \begin{cardA}{Best defensible claim}
+  The evidence supports \textbf{benchmark-dependent utility}, not the stronger claim that GFlowNets generally improve neural BO.
   \end{cardA}
 
   \vfill
 
-  \begin{cardG}{Best defensible claim}
-  The evidence supports \textbf{benchmark-dependent utility}, not the stronger claim that GFlowNets generally improve neural BO.
-  \end{cardG}
-\end{minipage}
-
-\column{0.38\textwidth}
-\begin{minipage}[t][0.82\textheight]{\linewidth}\vspace{0pt}
-  \begin{card}{Readout}
+  \begin{cardG}{Readout}
   \begin{itemize}
     \item No universal improvement.
     \item Clear positive evidence only on Ackley-10.
     \item Lower-dimensional benchmarks favor random masks in this setup.
   \end{itemize}
-  \end{card}
+  \end{cardG}
 
   \vfill
 
   \begin{cardW}{Interpretation}
   The controlled protocol did \textbf{not} change the benchmark-level conclusion: mixed outcome persists even after tighter evaluation controls.
   \end{cardW}
+\end{minipage}
+
+\column{0.44\textwidth}
+\begin{minipage}[t][0.80\textheight]{\linewidth}\vspace{0pt}
+  \begin{card}{Final regret over 5 seeds}
+  \centering
+  \scriptsize
+  \begin{tabular}{lcc}
+  \toprule
+  Benchmark & Random & GFlowNet \\
+  \midrule
+  Branin (2D) & $1.7813 \pm 1.1734$ & $2.1459 \pm 0.7910$ \\
+  Hartmann-6 (6D) & $0.5571 \pm 0.3059$ & $0.7027 \pm 0.5144$ \\
+  Ackley (10D) & $18.1526 \pm 1.1661$ & $16.7447 \pm 1.5421$ \\
+  \bottomrule
+  \end{tabular}
+
+  \vspace{0.45em}
+  {\TinyCap Lower regret is better. Ackley-10 is the only benchmark where GFlowNet improves final regret.}
+  \end{card}
 \end{minipage}
 \end{columns}
 \end{frame}
@@ -373,19 +400,19 @@
 \vspace{-0.55em}
 \begin{columns}[T,onlytextwidth]
 \column{0.48\textwidth}
-\begin{minipage}[t][0.80\textheight]{\linewidth}\vspace{0pt}
+\begin{minipage}[t][0.78\textheight]{\linewidth}\vspace{0pt}
   \begin{card}{Best random-mask seed}
   \centering
-  \includegraphics[width=\linewidth,height=0.64\textheight,keepaspectratio]{img/ackley10_random_diagnostics.png}
+  \includegraphics[width=\linewidth,height=0.62\textheight,keepaspectratio]{img/ackley10_random_diagnostics.png}
   \vspace{-0.25em}\par{\TinyCap Proxy scores and best-so-far trajectory for the strongest random run.}
   \end{card}
 \end{minipage}
 
 \column{0.48\textwidth}
-\begin{minipage}[t][0.80\textheight]{\linewidth}\vspace{0pt}
+\begin{minipage}[t][0.78\textheight]{\linewidth}\vspace{0pt}
   \begin{cardG}{Best GFlowNet seed}
   \centering
-  \includegraphics[width=\linewidth,height=0.64\textheight,keepaspectratio]{img/ackley10_gfn_diagnostics.png}
+  \includegraphics[width=\linewidth,height=0.62\textheight,keepaspectratio]{img/ackley10_gfn_diagnostics.png}
   \vspace{-0.25em}\par{\TinyCap Stronger final best-so-far trajectory, consistent with lower final regret.}
   \end{cardG}
 \end{minipage}
@@ -396,30 +423,14 @@
 \begin{frame}{Compute trade-off}
 \vspace{-0.55em}
 \begin{columns}[T,onlytextwidth]
-\column{0.56\textwidth}
-\begin{minipage}[t][0.82\textheight]{\linewidth}\vspace{0pt}
-  \begin{cardW}{Trial-level compute cost}
-  \centering
-  \begin{tabular}{lcccc}
-  \toprule
-  Benchmark & Random & GFN & Slowdown & Gain \\
-  \midrule
-  Branin & 3.75s & 128.07s & $34.11\times$ & $-0.3646$ \\
-  Hartmann-6 & 5.77s & 310.73s & $53.85\times$ & $-0.1456$ \\
-  Ackley & 7.52s & 509.42s & $67.70\times$ & $+1.4079$ \\
-  \bottomrule
-  \end{tabular}
-  \end{cardW}
+\column{0.52\textwidth}
+\begin{minipage}[t][0.80\textheight]{\linewidth}\vspace{0pt}
+  \begin{card}{Runtime message}
+  Surrogate fitting time is almost identical between methods. Most of the extra cost comes from \textbf{inner-loop GFlowNet training}, not from the base neural BO pipeline.
+  \end{card}
 
   \vfill
 
-  \begin{card}{Per-iteration runtime message}
-  Surrogate fitting time is almost identical between methods. Most of the extra cost comes from \textbf{inner-loop GFlowNet training}, not from the base neural BO pipeline.
-  \end{card}
-\end{minipage}
-
-\column{0.38\textwidth}
-\begin{minipage}[t][0.82\textheight]{\linewidth}\vspace{0pt}
   \begin{cardA}{Interpretation}
   \begin{itemize}
     \item On Branin and Hartmann-6, GFlowNet is \textbf{slower and worse}.
@@ -434,6 +445,23 @@
   Query efficiency improves only conditionally, while wall-clock efficiency degrades sharply.
   \end{cardG}
 \end{minipage}
+
+\column{0.44\textwidth}
+\begin{minipage}[t][0.80\textheight]{\linewidth}\vspace{0pt}
+  \begin{cardW}{Trial-level compute cost}
+  \centering
+  \scriptsize
+  \begin{tabular}{lcccc}
+  \toprule
+  Benchmark & Random & GFN & Slowdown & Gain \\
+  \midrule
+  Branin & 3.75s & 128.07s & $34.11\times$ & $-0.3646$ \\
+  Hartmann-6 & 5.77s & 310.73s & $53.85\times$ & $-0.1456$ \\
+  Ackley & 7.52s & 509.42s & $67.70\times$ & $+1.4079$ \\
+  \bottomrule
+  \end{tabular}
+  \end{cardW}
+\end{minipage}
 \end{columns}
 \end{frame}
 
@@ -441,8 +469,8 @@
 \begin{frame}{Why the mixed result still matters}
 \vspace{-0.55em}
 \begin{columns}[T,onlytextwidth]
-\column{0.47\textwidth}
-\begin{minipage}[t][0.82\textheight]{\linewidth}\vspace{0pt}
+\column{0.48\textwidth}
+\begin{minipage}[t][0.80\textheight]{\linewidth}\vspace{0pt}
   \begin{cardA}{Scientifically useful negative result}
   Under a tighter protocol, a mixed result has more weight: it is closer to evidence about the \textbf{method} rather than about a brittle implementation.
   \end{cardA}
@@ -458,13 +486,13 @@
   \end{card}
 \end{minipage}
 
-\column{0.47\textwidth}
-\begin{minipage}[t][0.82\textheight]{\linewidth}\vspace{0pt}
+\column{0.48\textwidth}
+\begin{minipage}[t][0.80\textheight]{\linewidth}\vspace{0pt}
   \begin{cardW}{Key bottlenecks}
   \begin{itemize}
     \item \textbf{reward alignment}: proxy reward may not track realized BO improvement
     \item \textbf{non-stationarity}: the policy is trained while the BO loop changes
-    \item \textbf{compute cost}: 34$\times$--68$\times$ slowdown is substantial
+    \item \textbf{compute cost}: $34\times$--$68\times$ slowdown is substantial
   \end{itemize}
   \end{cardW}
 
@@ -485,8 +513,8 @@
 \begin{frame}{Conclusion and future work}
 \vspace{-0.55em}
 \begin{columns}[T,onlytextwidth]
-\column{0.47\textwidth}
-\begin{minipage}[t][0.82\textheight]{\linewidth}\vspace{0pt}
+\column{0.48\textwidth}
+\begin{minipage}[t][0.80\textheight]{\linewidth}\vspace{0pt}
   \begin{cardG}{Final claim}
   Under a controlled evaluation protocol, GFlowNet-guided mask sampling:
   \begin{itemize}
@@ -503,8 +531,8 @@
   \end{cardA}
 \end{minipage}
 
-\column{0.47\textwidth}
-\begin{minipage}[t][0.82\textheight]{\linewidth}\vspace{0pt}
+\column{0.48\textwidth}
+\begin{minipage}[t][0.80\textheight]{\linewidth}\vspace{0pt}
   \begin{card}{Future work}
   \begin{itemize}
     \item improve proxy-reward calibration
@@ -515,12 +543,61 @@
     \item reduce policy-training cost per BO step
   \end{itemize}
   \end{card}
+\end{minipage}
+\end{columns}
+\end{frame}
+
+% ------------------------------------------------
+\appendix
+\begin{frame}{Appendix: later full-rerun comparison with plain random dropout}
+\vspace{-0.55em}
+\begin{columns}[T,onlytextwidth]
+\column{0.50\textwidth}
+\begin{minipage}[t][0.80\textheight]{\linewidth}\vspace{0pt}
+  \begin{cardW}{How to read this slide}
+  This is an additional \textbf{robustness check} from a later \textbf{full rerun} of the v2 pipeline. It asks whether the matched random baseline is stronger than \textbf{plain random dropout} that samples exactly one mask per BO step.
+  \end{cardW}
 
   \vfill
 
-  \begin{cardW}{Presenter recommendation}
-  Keep backup slides only for Branin / Hartmann-6 diagnostics if extra time remains.
-  \end{cardW}
+  \begin{cardA}{What changes}
+  \begin{itemize}
+    \item \textbf{Plain random}: one uniformly sampled mask per BO step
+    \item \textbf{Matched random}: best-of-96 random masks under the same proxy evaluation
+    \item \textbf{GFN}: learned mask policy under the same later v2 rerun setup
+  \end{itemize}
+  \end{cardA}
+
+  \vfill
+
+  \begin{cardG}{Takeaway}
+  The matched random baseline is not a trivial strawman:
+  \begin{itemize}
+    \item it clearly improves over plain random on Hartmann-6
+    \item it is still weaker than GFlowNet on Ackley-10
+    \item on Branin, even plain random remains competitive
+  \end{itemize}
+  \end{cardG}
+\end{minipage}
+
+\column{0.46\textwidth}
+\begin{minipage}[t][0.80\textheight]{\linewidth}\vspace{0pt}
+  \begin{card}{Final regret over 5 seeds (v2 only)}
+  \centering
+  \scriptsize
+  \begin{tabular}{lccc}
+  \toprule
+  Benchmark & Plain random & Matched random & GFlowNet \\
+  \midrule
+  Branin (2D) & $2.3177 \pm 1.9155$ & $2.4758 \pm 1.8689$ & $3.0355 \pm 1.4537$ \\
+  Hartmann-6 (6D) & $0.9728 \pm 0.5025$ & $0.7294 \pm 0.5219$ & $0.8534 \pm 0.4978$ \\
+  Ackley (10D) & $18.8398 \pm 0.3623$ & $19.5119 \pm 0.8592$ & $18.3047 \pm 0.6267$ \\
+  \bottomrule
+  \end{tabular}
+
+  \vspace{0.45em}
+  {\TinyCap Lower regret is better. These numbers come from a later full rerun of the v2 pipeline and isolate the effect of upgrading from plain random masks to a stronger best-of-K random baseline.}
+  \end{card}
 \end{minipage}
 \end{columns}
 \end{frame}

@@ -102,6 +102,21 @@ This suite runs:
 - `finetune_continual_v2`
 - `finetune_restart_v2`
 
+#### Plain random dropout baseline
+
+This suite reruns only the random policy and uses a single sampled dropout mask per BO step.
+
+```bash
+python scripts/run_plain_random_v2.py --profile smoke
+python scripts/run_plain_random_v2.py --profile full
+```
+
+Equivalent direct command:
+
+```bash
+python scripts/run_v2_suite.py --suite plain_random_v2 --profile full --methods random
+```
+
 ## Exporting Report-Ready Artifacts
 
 ### Main v2
@@ -149,6 +164,29 @@ Each reward protocol gets its own bundle:
 - `tables/summary_metrics.csv`
 - `tables/summary_metrics.md`
 - `snippets/report_snippet.md`
+
+### Plain random dropout baseline
+
+This exporter compares the latest `plain_random_v2` suite against the latest `main_v2` suite.
+
+```bash
+python scripts/export_plain_random_v2.py
+python scripts/export_plain_random_v2.py \
+  --suite-manifest artifacts_v2/_suites/plain_random_v2/<timestamp>/manifest.json \
+  --main-suite-manifest artifacts_v2/_suites/main_v2/<timestamp>/manifest.json
+```
+
+Output:
+
+- `report_assets_v2/plain_random_v2/<timestamp>/img/`
+- `report_assets_v2/plain_random_v2/<timestamp>/tables/`
+- `report_assets_v2/plain_random_v2/<timestamp>/snippets/`
+
+Artifacts include:
+
+- three-way regret plots: plain random vs matched random vs GFN
+- representative diagnostics for plain random and matched random
+- summary tables comparing final regret and slowdown
 
 ## Frozen Notebooks
 

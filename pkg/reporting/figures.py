@@ -28,6 +28,37 @@ def plot_regret_comparison(summary_by_method: dict, output_path: str, title: str
     plt.close()
 
 
+def plot_named_regret_comparison(
+    method_summaries: dict[str, dict],
+    output_path: str,
+    title: str,
+) -> None:
+    if plt is None:
+        raise ModuleNotFoundError("matplotlib is required for plotting.")
+    if not method_summaries:
+        return
+
+    horizon = min(len(summary["mean_regret"]) for summary in method_summaries.values())
+    x_axis = np.arange(1, horizon + 1)
+    colors = ["tab:blue", "tab:orange", "tab:green", "tab:red", "tab:purple", "tab:brown"]
+
+    plt.figure(figsize=(8, 5))
+    for idx, (label, summary) in enumerate(method_summaries.items()):
+        mean = np.asarray(summary["mean_regret"], dtype=float)[:horizon]
+        std = np.asarray(summary["std_regret"], dtype=float)[:horizon]
+        color = colors[idx % len(colors)]
+        plt.plot(x_axis, mean, label=label, color=color)
+        plt.fill_between(x_axis, mean - std, mean + std, alpha=0.2, color=color)
+    plt.xlabel("BO iteration")
+    plt.ylabel("Simple regret")
+    plt.title(title)
+    plt.grid(True, alpha=0.3)
+    plt.legend()
+    plt.tight_layout()
+    plt.savefig(output_path, dpi=150)
+    plt.close()
+
+
 def plot_diagnostics(trial: dict, output_path: str, title: str) -> None:
     if plt is None:
         raise ModuleNotFoundError("matplotlib is required for plotting.")

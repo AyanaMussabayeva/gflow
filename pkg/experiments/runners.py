@@ -43,6 +43,10 @@ def _summarize_trials(trials: list[dict]) -> dict:
     }
 
 
+def summarize_trials(trials: list[dict]) -> dict:
+    return _summarize_trials(trials)
+
+
 def _write_trial_csv(artifact_run: ArtifactRun, random_trials: list[dict], gfn_trials: list[dict]) -> None:
     rows = []
     for trial in random_trials + gfn_trials:
@@ -129,99 +133,117 @@ def _persist_progress(
         )
 
 
-def run_experiment(spec: ExperimentSpec, verbose: bool = False) -> dict:
-    artifact_run = ArtifactRun.create(spec.name, spec.benchmark_name)
-    artifact_run.write_json("spec.json", spec.to_dict())
-    total_trials = 2 * len(spec.seeds)
-    completed_trials = 0
-    random_trials = []
+def _run_method_trials(
+    spec: ExperimentSpec,
+    method: str,
+    artifact_run: ArtifactRun,
+    random_trials: list[dict],
+    gfn_trials: list[dict],
+    completed_trials: int,
+    total_trials: int,
+    verbose: bool,
+) -> int:
+    target_trials = random_trials if method == "random" else gfn_trials
     for seed in spec.seeds:
         if verbose:
             bar = _format_bar(completed_trials, total_trials)
             print(
                 f"[spec {spec.name}:{spec.benchmark_name}] [{bar}] "
-                f"starting random seed={seed}",
+                f"starting {method} seed={seed}",
                 flush=True,
             )
         trial = run_single_trial(
             spec,
-            "random",
+            method,
             seed,
             verbose=verbose,
-            progress_label=f"{spec.name}:{spec.benchmark_name}:random:seed={seed}",
+            progress_label=f"{spec.name}:{spec.benchmark_name}:{method}:seed={seed}",
         )
-        random_trials.append(trial)
-        _persist_progress(artifact_run, spec, random_trials, gfn_trials=[], latest_trial=trial)
-        completed_trials += 1
-        if verbose:
-            bar = _format_bar(completed_trials, total_trials)
-            print(
-                f"[spec {spec.name}:{spec.benchmark_name}] [{bar}] "
-                f"finished random seed={seed} final_regret={float(trial['regrets'][-1]):.4f}",
-                flush=True,
-            )
-
-    gfn_trials = []
-    for seed in spec.seeds:
-        if verbose:
-            bar = _format_bar(completed_trials, total_trials)
-            print(
-                f"[spec {spec.name}:{spec.benchmark_name}] [{bar}] "
-                f"starting gfn seed={seed}",
-                flush=True,
-            )
-        trial = run_single_trial(
-            spec,
-            "gfn",
-            seed,
-            verbose=verbose,
-            progress_label=f"{spec.name}:{spec.benchmark_name}:gfn:seed={seed}",
-        )
-        gfn_trials.append(trial)
+        target_trials.append(trial)
         _persist_progress(artifact_run, spec, random_trials, gfn_trials, latest_trial=trial)
         completed_trials += 1
         if verbose:
             bar = _format_bar(completed_trials, total_trials)
             print(
                 f"[spec {spec.name}:{spec.benchmark_name}] [{bar}] "
-                f"finished gfn seed={seed} final_regret={float(trial['regrets'][-1]):.4f}",
+                f"finished {method} seed={seed} final_regret={float(trial['regrets'][-1]):.4f}",
                 flush=True,
             )
+    return completed_trials
+
+
+def run_experiment(spec: ExperimentSpec, verbose: bool = False, methods: list[str] | None = None) -> dict:
+    resolved_methods = ["random", "gfn"] if methods is None else list(methods)
+    invalid_methods = sorted(set(resolved_methods) - {"random", "gfn"})
+    if invalid_methods:
+        raise ValueError(f"Unsupported methods: {invalid_methods!r}")
+    if not resolved_methods:
+        raise ValueError("At least one method must be requested.")
+
+    artifact_run = ArtifactRun.create(spec.name, spec.benchmark_name)
+    artifact_run.write_json("spec.json", spec.to_dict())
+    total_trials = len(resolved_methods) * len(spec.seeds)
+    completed_trials = 0
+    random_trials = []
+    gfn_trials = []
+    for method in resolved_methods:
+        completed_trials = _run_method_trials(
+            spec=spec,
+            method=method,
+            artifact_run=artifact_run,
+            random_trials=random_trials,
+            gfn_trials=gfn_trials,
+            completed_trials=completed_trials,
+            total_trials=total_trials,
+            verbose=verbose,
+        )
 
     summary = {
-        "random": _summarize_trials(random_trials),
-        "gfn": _summarize_trials(gfn_trials),
+        "random": _summarize_trials(random_trials) if random_trials else None,
+        "gfn": _summarize_trials(gfn_trials) if gfn_trials else None,
     }
-    summary["tradeoff"] = {
-        "regret_gain_of_gfn": float(summary["random"]["final_regret_mean"] - summary["gfn"]["final_regret_mean"]),
-        "slowdown_factor": float(summary["gfn"]["total_time_mean_sec"] / summary["random"]["total_time_mean_sec"]),
-    }
+    if random_trials and gfn_trials:
+        summary["tradeoff"] = {
+            "regret_gain_of_gfn": float(summary["random"]["final_regret_mean"] - summary["gfn"]["final_regret_mean"]),
+            "slowdown_factor": float(summary["gfn"]["total_time_mean_sec"] / summary["random"]["total_time_mean_sec"]),
+        }
+    else:
+        summary["tradeoff"] = None
 
     artifact_run.write_json(
         "summary.json",
         {
             "summary": summary,
+            "methods": resolved_methods,
             "random_trials": random_trials,
             "gfn_trials": gfn_trials,
         },
     )
     _write_trial_csv(artifact_run, random_trials, gfn_trials)
-    plot_regret_comparison(
-        summary_by_method=summary,
-        output_path=str(artifact_run.figures_root / "regret_comparison.png"),
-        title=f"{spec.benchmark_name} | {spec.name}",
-    )
-    plot_reward_histogram(
-        random_trials=random_trials,
-        gfn_trials=gfn_trials,
-        output_path=str(artifact_run.figures_root / "reward_hist.png"),
-        title=f"{spec.benchmark_name} | {spec.name}",
-    )
-    if verbose:
+    if random_trials and gfn_trials:
+        plot_regret_comparison(
+            summary_by_method=summary,
+            output_path=str(artifact_run.figures_root / "regret_comparison.png"),
+            title=f"{spec.benchmark_name} | {spec.name}",
+        )
+        plot_reward_histogram(
+            random_trials=random_trials,
+            gfn_trials=gfn_trials,
+            output_path=str(artifact_run.figures_root / "reward_hist.png"),
+            title=f"{spec.benchmark_name} | {spec.name}",
+        )
+    if verbose and summary["tradeoff"] is not None:
         print(
             f"[spec {spec.name}:{spec.benchmark_name}] completed "
             f"regret_gain={summary['tradeoff']['regret_gain_of_gfn']:.4f} "
             f"slowdown={summary['tradeoff']['slowdown_factor']:.2f}x",
+            flush=True,
+        )
+    elif verbose:
+        method_name = resolved_methods[0]
+        print(
+            f"[spec {spec.name}:{spec.benchmark_name}] completed "
+            f"{method_name}_final_regret={summary[method_name]['final_regret_mean']:.4f}",
             flush=True,
         )
     return {"artifact_dir": str(artifact_run.root), "summary": summary}

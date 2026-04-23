@@ -28,18 +28,22 @@ def main() -> None:
         default="main_v2",
         choices=[
             "main_v2",
+            "plain_random_v2",
             "reward_protocol_ablation_v2",
             "pool_ablation_v2",
             "finetune_ablation_v2",
         ],
     )
     parser.add_argument("--profile", default="smoke", choices=["smoke", "full"])
+    parser.add_argument("--methods", default="random,gfn")
     args = parser.parse_args()
 
     specs = build_suite_specs(args.suite, args.profile)
+    methods = [item.strip() for item in args.methods.split(",") if item.strip()]
     manifest = {
         "suite": args.suite,
         "profile": args.profile,
+        "methods": methods,
         "runs": [],
     }
     suite_dir = ARTIFACTS_V2_ROOT / "_suites" / args.suite / datetime.now().strftime("%Y%m%d_%H%M%S_%f")
@@ -60,11 +64,12 @@ def main() -> None:
             f"{spec.name}:{spec.benchmark_name}",
             flush=True,
         )
-        result = run_experiment(spec, verbose=True)
+        result = run_experiment(spec, verbose=True, methods=methods)
         manifest["runs"].append(
             {
                 "spec_name": spec.name,
                 "benchmark": spec.benchmark_name,
+                "methods": methods,
                 "artifact_dir": result["artifact_dir"],
                 "summary": result["summary"],
             }
